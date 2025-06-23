@@ -28,22 +28,14 @@ def add_to_cart(request):
 def update_cartitem_quantity(request):
     cartitem_id = request.data.get('item_id')
     quantity = request.data.get('quantity')
-    print(request.data)
-
 
     quantity = int(quantity)
 
     cartitem = CartItem.objects.get(id=cartitem_id)
     cartitem.quantity = quantity
     cartitem.save()
-    print(request.data)
-
 
     serializer = CartItemSerializer(cartitem)
-    print(request.data)
 
     return Response({'data':serializer.data, 'messaege':'Cart item updated successfully!'})
     
-
-
-
