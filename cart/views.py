@@ -38,4 +38,12 @@ def update_cartitem_quantity(request):
     serializer = CartItemSerializer(cartitem)
 
     return Response({'data':serializer.data, 'messaege':'Cart item updated successfully!'})
+
+
+@api_view(['DELETE'])
+def delete_cartitem(request, pk):
+    cartitem = CartItem.objects.get(id=pk)
+    cartitem.delete()
+
+    return Response('Cart Item deleted successfully', status=204)
     
