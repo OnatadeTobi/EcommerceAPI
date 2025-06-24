@@ -35,7 +35,8 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['e240-2a09-bac5-4dd5-14dc-00-214-98.ngrok-free.app', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://e240-2a09-bac5-4dd5-14dc-00-214-98.ngrok-free.app']
 
 
 # Application definition
@@ -54,6 +55,8 @@ INSTALLED_APPS = [
     'cart',
     'review',
     'wishlist',
+    'payments',
+    'order',
 ]
 
 MIDDLEWARE = [
@@ -167,3 +170,9 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+
+
+STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY')
+STRIPE_PUBLIC_KEY = env('STRIPE_PUBLIC_KEY')
+
+WEBHOOK_SECRET = env('WEBHOOK_SECRET')
