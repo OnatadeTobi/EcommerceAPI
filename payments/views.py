@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 
 from cart.models import Cart
@@ -6,11 +6,17 @@ from cart.models import Cart
 import stripe 
 from ecommerceAPI import settings
 
+from rest_framework.throttling import ScopedRateThrottle
+
+
 # Create your views here.
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 @api_view(['POST'])
+@throttle_classes([ScopedRateThrottle])
 def create_checkout_session(request):
+    request.throttle_scope = 'checkout'
+
     cart_code = request.data.get('cart_code')
     email = request.data.get('email')
     cart = Cart.objects.get(cart_code=cart_code)

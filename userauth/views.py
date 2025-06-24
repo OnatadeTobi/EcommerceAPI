@@ -10,6 +10,9 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.decorators import throttle_classes
+
 # Create your views here.
 class RegisterUserView(GenericAPIView):
     serializer_class = UserRegisterSerializer
@@ -53,6 +56,9 @@ class VerifyUserEmail(GenericAPIView):
 
 
 class LoginUserView(GenericAPIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
+    
     serializer_class=LoginSerializer
     def post(self, request):
         serializer = self.serializer_class(data=request.data, context={'request': request})

@@ -1,15 +1,20 @@
 from .models import Review
 from product.models import Product
 from .serializers import ReviewSerializer
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
+
+from rest_framework.throttling import ScopedRateThrottle
 
 User = get_user_model()
 
 # Create your views here.
 @api_view(['POST'])
+@throttle_classes([ScopedRateThrottle])
 def add_review(request):
+    request.throttle_scope = 'review'
+    
     product_id = request.data.get('product_id')
     email = request.data.get('email')
     rating = request.data.get('rating')
