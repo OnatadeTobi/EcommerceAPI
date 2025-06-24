@@ -36,7 +36,7 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = ['e240-2a09-bac5-4dd5-14dc-00-214-98.ngrok-free.app', '127.0.0.1', 'ecommerceapi-production-e139.up.railway.app']
-CSRF_TRUSTED_ORIGINS = ['https://e240-2a09-bac5-4dd5-14dc-00-214-98.ngrok-free.app']
+CSRF_TRUSTED_ORIGINS = ['https://e240-2a09-bac5-4dd5-14dc-00-214-98.ngrok-free.app', 'https://ecommerceapi-production-e139.up.railway.app']
 
 
 # Application definition
