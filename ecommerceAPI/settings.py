@@ -101,7 +101,7 @@ WSGI_APPLICATION = 'ecommerceAPI.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 
-DB = env('DB')
+DB = env('DB', default='False').lower() == 'true'
 
 if not DB:
 
