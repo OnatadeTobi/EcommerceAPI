@@ -1,5 +1,8 @@
-from rest_framework.decorators import api_view
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+
 from django.contrib.auth import get_user_model
 
 from product.models import Product
@@ -9,21 +12,24 @@ from .serializers import WishlistSerializer
 User = get_user_model()
 
 # Create your views here.
-@api_view(['POST'])
-def add_to_wishlist(request):
-    email = request.data.get('email')
-    product_id = request.data.get('product_id')
+class AddToWishlist(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        product_id = request.data.get('product_id')
 
-    user = User.objects.get(email=email)
-    product = Product.objects.get(id=product_id)
+        if not email or not product_id:
+            return Response({'detail': 'Email and product_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    wishlist = Wishlist.objects.filter(user=user, product=product)
+        user = get_object_or_404(User, email=email)
+        product = get_object_or_404(Product, id=product_id)
 
-    #Handles the deletion of product in the wishlist, it checks if its in the wishlist and if it is, it deletes it
-    if wishlist:
-        wishlist.delete()
-        return Response('Wishlist Deleted Successfully', status=204)
+        wishlist = Wishlist.objects.filter(user=user, product=product)
+
+        #Handles the deletion of product in the wishlist, it checks if its in the wishlist and if it is, it deletes it
+        if wishlist.exists():
+            wishlist.delete()
+            return Response({'detail':'Wishlist Deleted Successfully'}, status=status.HTTP_204_NO_CONTENT)
     
-    new_wishist = Wishlist.objects.create(user=user, product=product)
-    serializer = WishlistSerializer(new_wishist)
-    return Response(serializer.data)
+        new_wishist = Wishlist.objects.create(user=user, product=product)
+        serializer = WishlistSerializer(new_wishist)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
