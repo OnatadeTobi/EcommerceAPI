@@ -56,7 +56,7 @@ class CategoryListCreateView(APIView):
     
 
     def post(self, request):
-        serializer = CategoryListSerializer(data=request.data)
+        serializer = CategoryDetailSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -73,7 +73,7 @@ class CategoryDetailView(APIView):
 
     def put(self, request, slug):
         category = get_object_or_404(Category, slug=slug)
-        serializer = CategoryDetailSerializer(category, data=request.data)
+        serializer = CategoryDetailSerializer(category, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -83,7 +83,7 @@ class CategoryDetailView(APIView):
     def delete(self, request, slug):
         category = get_object_or_404(Category, slug=slug)
         category.delete()
-        return Response({'detail': 'Product Category successfully'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'detail': 'Category deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
     
 
