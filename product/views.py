@@ -5,15 +5,18 @@ from rest_framework import status
 
 from .models import Product, Category
 from .serializers import ProductListSerializer, ProductDetailSerializer, CategoryListSerializer, CategoryDetailSerializer
+from .pagination import StandardResultPagination
 
 from django.db.models import Q
 
 # Create your views here.
 class ProductListCreateView(APIView):
     def get(self, request):
-        products = Product.objects.filter(featured=True)
-        serializer = ProductListSerializer(products, many=True)
-        return Response(serializer.data)
+        products = Product.objects.filter(featured=True).order_by('-created_at')
+        paginator = StandardResultPagination()
+        paginated_products =  paginator.paginate_queryset(products, request)
+        serializer = ProductListSerializer(paginated_products, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = ProductDetailSerializer(data=request.data)
@@ -51,8 +54,10 @@ class ProductDetailView(APIView):
 class CategoryListCreateView(APIView):
     def get(self, request):
         categories = Category.objects.all()
-        serializer = CategoryListSerializer(categories, many=True)
-        return Response(serializer.data)
+        paginator = StandardResultPagination()
+        paginated_categories = paginator.paginate_queryset(categories, request)
+        serializer = CategoryListSerializer(paginated_categories, many=True)
+        return paginator.get_paginated_response(serializer.data)
     
 
     def post(self, request):
@@ -98,10 +103,13 @@ class ProductSearch(APIView):
         if not query:
             return Response({'detail':'No query provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-        products = Product.objects.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(category__name__icontains=query))
+        products = Product.objects.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(category__name__icontains=query)).order_by('created_at')
 
         if not products.exists():
             return Response({'detail': 'No products matched your search.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        paginator = StandardResultPagination()
+        paginated_products = paginator.paginate_queryset(products, request)
 
-        serializer = ProductListSerializer(products, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = ProductListSerializer(paginated_products, many=True)
+        return paginator.get_paginated_response(serializer.data)
