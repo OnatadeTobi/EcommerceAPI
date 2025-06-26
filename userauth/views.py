@@ -11,7 +11,6 @@ from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 from rest_framework.throttling import ScopedRateThrottle
-from rest_framework.decorators import throttle_classes
 
 # Create your views here.
 class RegisterUserView(GenericAPIView):
