@@ -35,8 +35,8 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['e240-2a09-bac5-4dd5-14dc-00-214-98.ngrok-free.app', '127.0.0.1', 'ecommerceapi-production-e139.up.railway.app']
-CSRF_TRUSTED_ORIGINS = ['https://e240-2a09-bac5-4dd5-14dc-00-214-98.ngrok-free.app', 'https://ecommerceapi-production-e139.up.railway.app']
+ALLOWED_HOSTS = ['06c2-2a09-bac1-5440-18-00-219-26.ngrok-free.app', '127.0.0.1', 'ecommerceapi-production-e139.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://06c2-2a09-bac1-5440-18-00-219-26.ngrok-free.app', 'https://ecommerceapi-production-e139.up.railway.app']
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
