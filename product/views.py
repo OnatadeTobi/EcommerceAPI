@@ -1,115 +1,82 @@
-from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.generics import ListCreateAPIView, ListAPIView,  RetrieveUpdateDestroyAPIView
+from rest_framework.filters import SearchFilter
 
 from .models import Product, Category
 from .serializers import ProductListSerializer, ProductDetailSerializer, CategoryListSerializer, CategoryDetailSerializer
 from .pagination import StandardResultPagination
+from .filters import ProductFilter
 
-from django.db.models import Q
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Create your views here.
-class ProductListCreateView(APIView):
-    def get(self, request):
-        products = Product.objects.filter(featured=True).order_by('-created_at')
-        paginator = StandardResultPagination()
-        paginated_products =  paginator.paginate_queryset(products, request)
-        serializer = ProductListSerializer(paginated_products, many=True)
-        return paginator.get_paginated_response(serializer.data)
-
-    def post(self, request):
-        serializer = ProductDetailSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class HomePageView(ListAPIView):
+    queryset = Product.objects.filter(featured=True).order_by('-created_at')
+    pagination_class = StandardResultPagination
+    serializer_class = ProductListSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProductFilter
+    
 
 
+class ProductListCreateView(ListCreateAPIView):
+    queryset = Product.objects.all().order_by('-created_at')
+    serializer_class = ProductListSerializer
+    pagination_class = StandardResultPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProductFilter
 
-class ProductDetailView(APIView):
-    def get(self, request, slug):
-        product = get_object_or_404(Product, slug=slug)
-        serializer = ProductDetailSerializer(product)
-        return Response(serializer.data)
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return ProductDetailSerializer
+        return ProductListSerializer
 
-    def put(self, request, slug):
-        product = get_object_or_404(Product, slug=slug)
-        serializer = ProductDetailSerializer(product, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('min_price', openapi.IN_QUERY, description="Minimum price", type=openapi.TYPE_NUMBER),
+            openapi.Parameter('max_price', openapi.IN_QUERY, description="Maximum price", type=openapi.TYPE_NUMBER),
+            openapi.Parameter('category', openapi.IN_QUERY, description="Category name", type=openapi.TYPE_STRING),
+            openapi.Parameter('featured', openapi.IN_QUERY, description="Filter by featured products", type=openapi.TYPE_BOOLEAN),
+            openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
-    def delete(self, request, slug):
-        product = get_object_or_404(Product, slug=slug)
-        product.delete()
-        return Response({'detail': 'Product deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
+class ProductDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductDetailSerializer
+    lookup_field = 'slug'
         
 
 
 
 
-
-class CategoryListCreateView(APIView):
-    def get(self, request):
-        categories = Category.objects.all()
-        paginator = StandardResultPagination()
-        paginated_categories = paginator.paginate_queryset(categories, request)
-        serializer = CategoryListSerializer(paginated_categories, many=True)
-        return paginator.get_paginated_response(serializer.data)
     
+class CategoryListCreateView(ListCreateAPIView):
+    queryset = Category.objects.all().order_by('-created_at')
+    serializer_class = CategoryListSerializer
+    pagination_class = StandardResultPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProductFilter
 
-    def post(self, request):
-        serializer = CategoryDetailSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-class CategoryDetailView(APIView):
-    def get(self, request, slug):
-        category = get_object_or_404(Category, slug=slug)
-        serializer = CategoryDetailSerializer(category)
-        return Response(serializer.data)
-    
-
-    def put(self, request, slug):
-        category = get_object_or_404(Category, slug=slug)
-        serializer = CategoryDetailSerializer(category, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-    def delete(self, request, slug):
-        category = get_object_or_404(Category, slug=slug)
-        category.delete()
-        return Response({'detail': 'Category deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-
-    
-
-
-
-
-
-
-class ProductSearch(APIView):
-    def get(self, request):
-        query = request.query_params.get('query')
-        if not query:
-            return Response({'detail':'No query provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-        products = Product.objects.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(category__name__icontains=query)).order_by('created_at')
-
-        if not products.exists():
-            return Response({'detail': 'No products matched your search.'}, status=status.HTTP_404_NOT_FOUND)
         
-        paginator = StandardResultPagination()
-        paginated_products = paginator.paginate_queryset(products, request)
+class CategoryDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategoryDetailSerializer
+    lookup_field = 'slug'
 
-        serializer = ProductListSerializer(paginated_products, many=True)
-        return paginator.get_paginated_response(serializer.data)
+
+
+
+class ProductSearch(ListAPIView):
+    serializer_class = ProductListSerializer
+    pagination_class = StandardResultPagination
+    filter_backends = [SearchFilter]
+    search_fields = ['name', 'description', 'category__name']
+
+    def get_queryset(self):
+        return Product.objects.all().order_by('-created_at')
