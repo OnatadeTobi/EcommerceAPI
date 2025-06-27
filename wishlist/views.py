@@ -1,35 +1,48 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework import status
 
-from django.contrib.auth import get_user_model
+from rest_framework.generics import CreateAPIView ,ListAPIView
+from rest_framework.permissions import IsAuthenticated
 
+
+from product.pagination import StandardResultPagination
 from product.models import Product
 from .models import Wishlist
-from .serializers import WishlistSerializer
+from .serializers import WishlistDisplaySerializer, WishlistSerializer
 
-User = get_user_model()
 
-# Create your views here.
-class AddToWishlist(APIView):
-    def post(self, request):
-        email = request.data.get('email')
+
+
+class AddToWishlist(CreateAPIView):
+    serializer_class = WishlistSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
         product_id = request.data.get('product_id')
 
-        if not email or not product_id:
-            return Response({'detail': 'Email and product_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not product_id:
+            return Response({'detail': 'Product ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = get_object_or_404(User, email=email)
+        user = request.user
         product = get_object_or_404(Product, id=product_id)
 
         wishlist = Wishlist.objects.filter(user=user, product=product)
 
-        #Handles the deletion of product in the wishlist, it checks if its in the wishlist and if it is, it deletes it
         if wishlist.exists():
             wishlist.delete()
-            return Response({'detail':'Wishlist Deleted Successfully'}, status=status.HTTP_204_NO_CONTENT)
-    
-        new_wishist = Wishlist.objects.create(user=user, product=product)
-        serializer = WishlistSerializer(new_wishist)
+            return Response({'detail': 'Wishlist item removed.'}, status=status.HTTP_204_NO_CONTENT)
+
+        new_wishlist = Wishlist.objects.create(user=user, product=product)
+        serializer = self.get_serializer(new_wishlist)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+class UserWishlistView(ListAPIView):
+    serializer_class = WishlistDisplaySerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultPagination
+
+    def get_queryset(self):
+        return Wishlist.objects.filter(user=self.request.user).order_by('created_at')
+
