@@ -62,7 +62,7 @@ class CartView(APIView):
             quantity = int(quantity)
             if quantity <= 0:
                 return Response({'detail': 'Quantity must be a positive number'}, status=status.HTTP_400_BAD_REQUEST)
-            if quantity > 100:  # Set the maximum limit per cart/order
+            if quantity > 100:  # Set the maximum limit per cart/order.
                 return Response({'detail': 'Quantity cannot exceed 100'}, status=status.HTTP_400_BAD_REQUEST)
         except (ValueError, TypeError):
             return Response({'detail': 'Quantity must be a valid number'}, status=status.HTTP_400_BAD_REQUEST)
