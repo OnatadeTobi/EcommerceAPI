@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework.generics import ListCreateAPIView, ListAPIView, RetrieveUpdateDestroyAPIView
 
 from .models import Cart, CartItem
 from product.models import Product
@@ -84,3 +85,10 @@ class CartDelete(APIView):
         cartitem.delete()
 
         return Response({'detail': 'Cart Item deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+# class CartView(ListCreateAPIView):
+#     serializer_class = CartSerializer
+    
+#     def create(self, request, *args, **kwargs):
