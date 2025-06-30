@@ -1,94 +1,76 @@
 from django.shortcuts import get_object_or_404
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, ListAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import IsAuthenticated
 
 from .models import Cart, CartItem
+from .serializers import CartSerializer
+
 from product.models import Product
-from .serializers import CartSerializer, CartItemSerializer
 
-# Create your views here.
+
 class CartView(APIView):
+    """
+    Handles cart operations:
+    - GET: Retrieve user's cart with items
+    - POST: Modify cart items (add/subtract/remove)
+    Actions:
+    - add (default): Increase quantity
+    - subtract: Decrease quantity (removes if ≤0)
+    - remove: Delete item completely
+    """
+
+    permission_classes = [IsAuthenticated]
+
+
     def get(self, request):
-        cart_code = request.data.get('cart_code')
+        """Get full cart with items and totals"""
 
-        if not cart_code:
-            return Response({'detail': 'Cart code is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        cart = get_object_or_404(Cart, cart_code=cart_code)
-        
+        cart = get_object_or_404(Cart.objects.prefetch_related("cartitems__product"), user=request.user)
         serializer = CartSerializer(cart)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-
-
+        return Response(serializer.data)
     
   
-    
-    def post(self, request):
-        cart_code = request.data.get('cart_code')
-        product_id = request.data.get('product_id')
 
-        if not cart_code or not product_id:
-            return Response({'detail': 'Cart Code and Product ID are required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        cart, created = Cart.objects.get_or_create(cart_code=cart_code)
+    def post(self, request):
+        """
+        Modify cart items.
+        Required params:
+        - product_id: integer
+        Optional params:
+        - action: string ('add'|'subtract'|'remove') defaults to 'add'
+        """
+
+        product_id = request.data.get("product_id")
+        action = request.data.get("action", "add")
+
+        if not product_id:
+            return Response({"error": "Product ID required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart, _ = Cart.objects.get_or_create(user=request.user)
         product = get_object_or_404(Product, id=product_id)
 
-        cartitem, created = CartItem.objects.get_or_create(product=product, cart=cart)
+        # Create with quantity=1 or get existing
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product, defaults={'quantity': 0}) 
 
-        if created:
-            cartitem.quantity = 1
+        # Only modify existing items
+        if action == "add":
+            cart_item.quantity += 1
+        elif action == "subtract":
+            cart_item.quantity -= 1
+        elif action == "remove":
+            cart_item.delete()
+            return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
+
+        if cart_item.quantity <= 0:
+            cart_item.delete()
         else:
-            cartitem.quantity +=1
-        cartitem.save()
+            cart_item.save()
 
-        serializer = CartSerializer(cart)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+        return Response(
+            CartSerializer(cart).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
 
-
-
-        
-
-    def put(self, request):
-        cartitem_id = request.data.get('item_id')
-        quantity = request.data.get('quantity')
-
-        if not cartitem_id or not quantity:
-            return Response({'detail': 'Cart Item ID and Quantity are required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            quantity = int(quantity)
-            if quantity <= 0:
-                return Response({'detail': 'Quantity must be a positive number'}, status=status.HTTP_400_BAD_REQUEST)
-            if quantity > 100:  # Set the maximum limit per cart/order.
-                return Response({'detail': 'Quantity cannot exceed 100'}, status=status.HTTP_400_BAD_REQUEST)
-        except (ValueError, TypeError):
-            return Response({'detail': 'Quantity must be a valid number'}, status=status.HTTP_400_BAD_REQUEST)
-        
-
-
-        cartitem = get_object_or_404(CartItem, id=cartitem_id)
-        cartitem.quantity = quantity
-        cartitem.save()
-        
-        serializer = CartItemSerializer(cartitem)
-        return Response(serializer.data, {'detail':'Cart item updated successfully!'}, status=status.HTTP_200_OK)
-    
-
-
-class CartDelete(APIView):
-    def delete(self, request, pk):
-        cartitem = get_object_or_404(CartItem, id=pk)
-        cartitem.delete()
-
-        return Response({'detail': 'Cart Item deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-    
-
-
-# class CartView(ListCreateAPIView):
-#     serializer_class = CartSerializer
-    
-#     def create(self, request, *args, **kwargs):
