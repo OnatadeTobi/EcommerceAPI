@@ -13,7 +13,7 @@ from .serializers import WishlistDisplaySerializer, WishlistSerializer
 
 
 
-
+ 
 class AddToWishlist(CreateAPIView):
     serializer_class = WishlistSerializer
     permission_classes = [IsAuthenticated]
