@@ -33,7 +33,7 @@ class ReviewListCreateView(APIView):
             return Response({'detail': 'Email, product_id, rating and review_text are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         product = get_object_or_404(Product, id=product_id)
-        user = get_object_or_404(User, email=email)   
+        user = get_object_or_404(User, email=email)
 
         if Review.objects.filter(product=product, user=user).exists():
             return Response({'detail':'You already reviewed this.'}, status=status.HTTP_400_BAD_REQUEST)
