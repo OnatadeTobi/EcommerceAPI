@@ -41,7 +41,7 @@ class ReviewListCreateView(APIView):
         review = Review.objects.create(product=product, user=user, rating=rating, review=review_text)
         serializer = ReviewSerializer(review)
         return Response(serializer.data, status=status.HTTP_201_CREATED) 
-    
+
     
 
 class ReviewDetailView(APIView):
